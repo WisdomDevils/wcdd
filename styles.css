@@ -231,17 +231,20 @@ body.touch .cursor, body.touch #trail { display: none; }
   opacity: 0; pointer-events: none;
   transition: opacity .45s ease;
 }
-.veil.on { opacity: 1; pointer-events: auto; }
+body.is-zoomed .scan,
+body.is-zoomed .noise,
+body.is-zoomed .vignette { opacity: 0; }
+body.is-zoomed .beams { opacity: .12; }
+.veil.on { opacity: 0; pointer-events: auto; }
 
 .frame.zoomed {
   overflow: visible;
   z-index: 6;
-  filter: contrast(1.02) saturate(1.04);
-  box-shadow:
-    0 50px 120px rgba(0,0,0,.75),
-    0 0 0 1px rgba(255,220,180,.35),
-    0 0 90px rgba(255,140,70,.22);
+  background: transparent;
+  filter: brightness(1.06) contrast(1.02);
+  box-shadow: none;
 }
+.frame.zoomed::after { display: none; }
 .frame.zoomed .shine { opacity: 0; }
 .frame.zoom-anim {
   transition: transform .7s cubic-bezier(.2,.82,.2,1), filter .3s ease, box-shadow .3s ease;
@@ -273,4 +276,3 @@ body.touch .cursor, body.touch #trail { display: none; }
   body { cursor: auto; }
   .cursor, #trail, #bolts { display: none; }
 }
-

@@ -21,12 +21,6 @@
   const particles = [];
   const sparks = [];
 
-  const GRID = {
-    x0: 0.036, x1: 0.938, cols: 8,
-    header: [0.07, 0.125],
-    rows: [[0.19, 0.392], [0.429, 0.694], [0.732, 0.923]],
-  };
-
   function sizeCanvas(c, ctx) {
     c.width = innerWidth * devicePixelRatio;
     c.height = innerHeight * devicePixelRatio;
@@ -89,27 +83,18 @@
     bctx.stroke();
   }
 
-  function cellAt(nx, ny) {
-    if (ny < (GRID.header[1] + GRID.rows[0][0]) / 2) {
-      return { x: GRID.x0, y: GRID.header[0], w: GRID.x1 - GRID.x0, h: GRID.header[1] - GRID.header[0] };
-    }
-    let row = GRID.rows.length - 1;
-    for (let r = 0; r < GRID.rows.length; r++) {
-      const mid = r === GRID.rows.length - 1 ? 1 : (GRID.rows[r][1] + GRID.rows[r + 1][0]) / 2;
-      if (ny < mid) { row = r; break; }
-    }
-    const span = GRID.x1 - GRID.x0;
-    const colW = span / GRID.cols;
-    let col = Math.floor((nx - GRID.x0) / colW);
-    col = Math.max(0, Math.min(GRID.cols - 1, col));
-    const pad = 0.0035;
-    const y0 = GRID.rows[row][0], y1 = GRID.rows[row][1];
-    return {
-      x: GRID.x0 + col * colW + pad,
-      y: y0,
-      w: colW - pad * 2,
-      h: y1 - y0,
-    };
+  function focusAt(nx, ny, fr) {
+    const va = innerWidth / innerHeight;
+    const pa = fr.width / fr.height;
+    let fw = 0.38;
+    let fh = fw * pa / va;
+    if (fh > 0.52) { fh = 0.52; fw = fh * va / pa; }
+    if (fw > 0.55) { fw = 0.55; fh = fw * pa / va; }
+    let x = nx - fw / 2;
+    let y = ny - fh / 2;
+    x = Math.max(0, Math.min(1 - fw, x));
+    y = Math.max(0, Math.min(1 - fh, y));
+    return { x: x, y: y, w: fw, h: fh };
   }
 
   function clipSH(poly, inside, intersect) {
@@ -175,24 +160,27 @@
 
   function glassShards(W, H, hole) {
     const sites = [];
-    const ring = 14;
     const cx = hole.x + hole.w / 2, cy = hole.y + hole.h / 2;
-    const rx = hole.w * 0.62, ry = hole.h * 0.62;
-    for (let i = 0; i < ring; i++) {
-      const a = (i / ring) * Math.PI * 2 + (Math.random() - 0.5) * 0.35;
-      sites.push([
-        cx + Math.cos(a) * rx * (1.05 + Math.random() * 0.25),
-        cy + Math.sin(a) * ry * (1.05 + Math.random() * 0.25),
-      ]);
+    const rx = hole.w * 0.58, ry = hole.h * 0.58;
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + (Math.random() - 0.5) * 0.28;
+      sites.push([cx + Math.cos(a) * rx * 1.12, cy + Math.sin(a) * ry * 1.12]);
+    }
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2 + (Math.random() - 0.5) * 0.2;
+      sites.push([cx + Math.cos(a) * rx * 1.85, cy + Math.sin(a) * ry * 1.85]);
     }
     let guard = 0;
-    while (sites.length < 36 && guard++ < 80) {
+    while (sites.length < 48 && guard++ < 120) {
       const px = Math.random() * W, py = Math.random() * H;
-      if (!inHole(px, py, hole)) sites.push([px, py]);
+      if (inHole(px, py, hole)) continue;
+      const d = Math.hypot(px - cx, py - cy);
+      const need = d / Math.hypot(W, H);
+      if (Math.random() < 0.25 + need * 1.4) sites.push([px, py]);
     }
     sites.push([8, 8], [W - 8, 8], [W - 8, H - 8], [8, H - 8]);
 
-    const cells = sites.map((site, i) => {
+    const cells = sites.map(function (site, i) {
       let poly = [[0, 0], [W, 0], [W, H], [0, H]];
       for (let j = 0; j < sites.length; j++) {
         if (i === j) continue;
@@ -209,7 +197,7 @@
       [hole.x + hole.w, hole.y, W - (hole.x + hole.w), hole.h],
     ];
     const shards = [];
-    const minA = W * H * 0.0012;
+    const minA = W * H * 0.0007;
     for (const poly of cells) {
       if (poly.length < 3) continue;
       for (const r of regions) {
@@ -232,7 +220,7 @@
     if (el) el.remove();
   }
 
-  function explodeGlass(hole01) {
+  function explodeGlass(hole01, xform, origin) {
     clearBreak();
     if (reduce) return;
     const r = frame.getBoundingClientRect();
@@ -242,37 +230,48 @@
     layer.style.top = r.top + "px";
     layer.style.width = r.width + "px";
     layer.style.height = r.height + "px";
+    layer.style.transformOrigin = origin;
+    layer.style.transition = "transform .7s cubic-bezier(.2,.82,.2,1)";
     const src = poster.currentSrc || poster.src;
     const W = 1000, H = 1000 * (r.height / r.width);
     const hole = { x: hole01.x * W, y: hole01.y * H, w: hole01.w * W, h: hole01.h * H };
     const polys = glassShards(W, H, hole);
     const hx = hole.x + hole.w / 2, hy = hole.y + hole.h / 2;
+    const rHole = Math.hypot(hole.w, hole.h) * 0.28;
+    const maxD = Math.hypot(W, H) * 0.55;
     polys.forEach(function (poly, i) {
       const s = document.createElement("div");
       s.className = "shard";
       s.style.backgroundImage = "url(" + JSON.stringify(src).slice(1, -1) + ")";
       s.style.clipPath = "polygon(" + polyCss(poly, W, H) + ")";
       const c = centroid(poly);
-      const dx = (c[0] - hx) / W * (160 + Math.random() * 220);
-      const dy = (c[1] - hy) / H * (140 + Math.random() * 200);
-      const rot = (Math.random() - 0.5) * 52;
-      s.style.transition = "transform .85s cubic-bezier(.12,.7,.2,1) " + (i % 7) * 18 + "ms, opacity .8s ease " + (i % 7) * 18 + "ms";
+      const d = Math.hypot(c[0] - hx, c[1] - hy);
+      const t = Math.max(0, Math.min(1, (d - rHole) / (maxD - rHole)));
+      const ang = Math.atan2(c[1] - hy, c[0] - hx);
+      const push = 10 + t * 78;
+      const sc = 1.02 - t * 0.74;
+      const rot = (Math.random() - 0.5) * (8 + t * 28);
+      s.style.opacity = String(0.98 - t * 0.18);
+      s.style.transition = "transform .8s cubic-bezier(.16,.8,.2,1) " + (i % 8) * 16 + "ms, opacity .6s ease";
       layer.appendChild(s);
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
-          s.style.transform = "translate(" + dx + "px," + dy + "px) rotate(" + rot + "deg) scale(.92)";
-          s.style.opacity = "0";
+          s.style.transform = "translate(" + (Math.cos(ang) * push) + "px," + (Math.sin(ang) * push) + "px) rotate(" + rot + "deg) scale(" + sc + ")";
         });
       });
     });
     document.body.appendChild(layer);
+    requestAnimationFrame(function () {
+      layer.style.transform = xform;
+    });
   }
 
   function implodeGlass() {
     const layer = document.querySelector(".break-layer");
     if (!layer) return;
+    layer.style.transform = "none";
     [].forEach.call(layer.children, function (s) {
-      s.style.transition = "transform .7s cubic-bezier(.2,.85,.2,1), opacity .55s ease";
+      s.style.transition = "transform .7s cubic-bezier(.2,.85,.2,1), opacity .5s ease";
       s.style.transform = "translate(0,0) rotate(0) scale(1)";
       s.style.opacity = "1";
     });
@@ -280,30 +279,29 @@
   }
 
   function zoomIn(e) {
-    const r = poster.getBoundingClientRect();
-    const nx = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-    const ny = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
-    const hole = cellAt(nx, ny);
     const fr = frame.getBoundingClientRect();
+    const nx = Math.max(0, Math.min(1, (e.clientX - fr.left) / fr.width));
+    const ny = Math.max(0, Math.min(1, (e.clientY - fr.top) / fr.height));
+    const hole = focusAt(nx, ny, fr);
     const px = fr.left + (hole.x + hole.w / 2) * fr.width;
     const py = fr.top + (hole.y + hole.h / 2) * fr.height;
-    const cellW = hole.w * fr.width;
-    const cellH = hole.h * fr.height;
-    let s = Math.min((0.86 * innerWidth) / cellW, (0.82 * innerHeight) / cellH);
-    s = Math.max(2.2, Math.min(s, 7.2));
+    let s = Math.min((0.78 * innerWidth) / (hole.w * fr.width), (0.78 * innerHeight) / (hole.h * fr.height));
+    s = Math.max(1.55, Math.min(s, 2.45));
+    const origin = ((hole.x + hole.w / 2) * 100) + "% " + ((hole.y + hole.h / 2) * 100) + "%";
+    const xform = "translate(" + (innerWidth / 2 - px) + "px," + (innerHeight / 2 - py) + "px) scale(" + s + ")";
     const top = hole.y * 100;
     const right = (1 - hole.x - hole.w) * 100;
     const bottom = (1 - hole.y - hole.h) * 100;
     const left = hole.x * 100;
 
-    explodeGlass(hole);
+    explodeGlass(hole, xform, origin);
     document.body.classList.add("is-zoomed");
     if (veil) veil.classList.add("on");
     frame.classList.add("zoom-anim", "zoomed");
-    frame.style.transformOrigin = ((hole.x + hole.w / 2) * 100) + "% " + ((hole.y + hole.h / 2) * 100) + "%";
-    poster.style.clipPath = "inset(" + top.toFixed(2) + "% " + right.toFixed(2) + "% " + bottom.toFixed(2) + "% " + left.toFixed(2) + "% round 6px)";
-    frame.style.transform = "translate(" + (innerWidth / 2 - px) + "px," + (innerHeight / 2 - py) + "px) scale(" + s + ")";
-    spark(e.clientX, e.clientY, reduce ? 8 : 28);
+    frame.style.transformOrigin = origin;
+    poster.style.clipPath = "inset(" + top.toFixed(2) + "% " + right.toFixed(2) + "% " + bottom.toFixed(2) + "% " + left.toFixed(2) + "% round 8px)";
+    frame.style.transform = xform;
+    spark(e.clientX, e.clientY, reduce ? 8 : 22);
     zoomed = true;
   }
 
