@@ -313,8 +313,11 @@
     const hole = focusAt(nx, ny, fr);
     const px = fr.left + (hole.x + hole.w / 2) * fr.width;
     const py = fr.top + (hole.y + hole.h / 2) * fr.height;
-    let s = Math.min((0.78 * innerWidth) / (hole.w * fr.width), (0.78 * innerHeight) / (hole.h * fr.height));
-    s = Math.max(1.55, Math.min(s, 2.45));
+    const mobile = coarse || innerWidth < 700;
+    const fill = mobile ? 0.94 : 0.78;
+    const cap = mobile ? 12 : 2.45;
+    let s = Math.min((fill * innerWidth) / (hole.w * fr.width), (fill * innerHeight) / (hole.h * fr.height));
+    s = Math.max(1.55, Math.min(s, cap));
     const origin = ((hole.x + hole.w / 2) * 100) + "% " + ((hole.y + hole.h / 2) * 100) + "%";
     const xform = "translate(" + (innerWidth / 2 - px) + "px," + (innerHeight / 2 - py) + "px) scale(" + s + ")";
     const top = hole.y * 100;
