@@ -4,17 +4,21 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>wcdd.de</title>
-  <meta name="theme-color" content="#07070a" />
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="theme-color" content="#050508" />
+  <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
   <div class="noise" aria-hidden="true"></div>
+  <div class="scan" aria-hidden="true"></div>
   <canvas id="dust" aria-hidden="true"></canvas>
   <div class="glow glow-a" aria-hidden="true"></div>
   <div class="glow glow-b" aria-hidden="true"></div>
   <div class="glow glow-c" aria-hidden="true"></div>
-  <div id="spot" class="spot" aria-hidden="true"></div>
+  <div class="glow glow-d" aria-hidden="true"></div>
+  <div class="spot" aria-hidden="true"></div>
+  <div class="beams" aria-hidden="true"></div>
   <div class="vignette" aria-hidden="true"></div>
+  <div id="flash" class="flash" aria-hidden="true"></div>
   <main class="stage">
     <div class="frame" id="frame">
       <div class="shine" id="shine" aria-hidden="true"></div>
@@ -24,9 +28,11 @@
   <div id="cursor" class="cursor" aria-hidden="true">
     <span class="cursor-core"></span>
     <span class="cursor-ring"></span>
+    <span class="cursor-ring2"></span>
   </div>
+  <canvas id="bolts" aria-hidden="true"></canvas>
   <canvas id="trail" aria-hidden="true"></canvas>
-  <span class="mark">wcdd.de · 点击图片放大</span>
-  <script src="app.js"></script>
+  <span class="mark">wcdd.de · 点击碎裂</span>
+  <script src="app.js?v=2"></script>
 </body>
 </html>
