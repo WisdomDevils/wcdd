@@ -204,10 +204,12 @@ body.touch .cursor, body.touch #trail { display: none; }
 
 .mark {
   position: fixed; z-index: 6; left: 22px; bottom: 18px;
-  letter-spacing: .22em; font-size: 11px;
+  letter-spacing: .18em; font-size: 11px;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: rgba(255,255,255,.45);
-  pointer-events: none;
+  pointer-events: auto;
+  user-select: text;
+  cursor: text;
   text-shadow: 0 0 12px rgba(255,180,90,.4);
 }
 
@@ -302,3 +304,4 @@ body.touch .ghost { opacity: 0 !important; }
   body { cursor: auto; }
   .cursor, #trail, #bolts { display: none; }
 }
+
