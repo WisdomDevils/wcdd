@@ -8,6 +8,7 @@
   const poster = document.getElementById("poster");
   const flash = document.getElementById("flash");
   const veil = document.getElementById("veil");
+  const ghost = document.getElementById("ghost");
   const dctx = dust.getContext("2d");
   const tctx = trail.getContext("2d");
   const bctx = bolts.getContext("2d");
@@ -16,6 +17,7 @@
   if (coarse) document.body.classList.add("touch");
 
   let mx = 0.5, my = 0.5, tx = 0.5, ty = 0.5, zoomed = false, busy = false;
+  let gx = 0.3, gy = 0.3, gw = 0.38, gh = 0.24, gtx = 0.3, gty = 0.3, gtw = 0.38, gth = 0.24, ghostOn = false;
   let cx = innerWidth / 2, cy = innerHeight / 2;
   let vx = 0, vy = 0, glitchT = 0;
   const particles = [];
@@ -95,6 +97,32 @@
     x = Math.max(0, Math.min(1 - fw, x));
     y = Math.max(0, Math.min(1 - fh, y));
     return { x: x, y: y, w: fw, h: fh };
+  }
+
+
+  function setGhostTarget(e) {
+    if (!ghost || zoomed || coarse) { ghostOn = false; return; }
+    const r = frame.getBoundingClientRect();
+    const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    ghostOn = over;
+    if (!over) return;
+    const nx = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    const ny = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+    const hole = focusAt(nx, ny, r);
+    gtx = hole.x; gty = hole.y; gtw = hole.w; gth = hole.h;
+  }
+
+  function paintGhost() {
+    if (!ghost) return;
+    gx += (gtx - gx) * 0.22;
+    gy += (gty - gy) * 0.22;
+    gw += (gtw - gw) * 0.22;
+    gh += (gth - gh) * 0.22;
+    ghost.style.left = (gx * 100) + "%";
+    ghost.style.top = (gy * 100) + "%";
+    ghost.style.width = (gw * 100) + "%";
+    ghost.style.height = (gh * 100) + "%";
+    ghost.classList.toggle("on", ghostOn && !zoomed);
   }
 
   function clipSH(poly, inside, intersect) {
@@ -294,6 +322,8 @@
     const bottom = (1 - hole.y - hole.h) * 100;
     const left = hole.x * 100;
 
+    ghostOn = false;
+    if (ghost) ghost.classList.remove("on");
     explodeGlass(hole, xform, origin);
     document.body.classList.add("is-zoomed");
     if (veil) veil.classList.add("on");
@@ -407,6 +437,7 @@
       tctx.fill();
     }
     vx *= 0.88; vy *= 0.88;
+    paintGhost();
     requestAnimationFrame(tick);
   }
 
@@ -419,6 +450,7 @@
       const r = frame.getBoundingClientRect();
       frame.classList.toggle("hot", e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom);
     }
+    setGhostTarget(e);
     if (!reduce && Math.random() < 0.4) {
       sparks.push({
         x: cx, y: cy,
@@ -456,4 +488,5 @@
   resize();
   spawn(reduce || coarse ? 40 : 220);
   if (!reduce) tick();
+  else (function ghostLoop() { paintGhost(); requestAnimationFrame(ghostLoop); })();
 })();
