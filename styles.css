@@ -8,6 +8,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; background: var(--bg); overflow: hidden; }
+body.is-zoomed { cursor: none; }
 body { cursor: none; }
 body.touch { cursor: auto; }
 body.touch .cursor, body.touch #trail { display: none; }
@@ -124,7 +125,6 @@ body.touch .cursor, body.touch #trail { display: none; }
     0 0 0 1px rgba(255,220,180,.4),
     0 0 160px rgba(255,140,70,.28);
 }
-.frame.zoomed { width: min(98vw, 1600px); }
 .frame.punch { animation: punch .4s ease; }
 .frame.glitch {
   animation: rgbshift .18s steps(2) infinite;
@@ -224,6 +224,45 @@ body.touch .cursor, body.touch #trail { display: none; }
   to { opacity: 0; width: 280px; height: 280px; }
 }
 
+
+.veil {
+  position: fixed; inset: 0; z-index: 4;
+  background: rgba(4,4,8,.55);
+  opacity: 0; pointer-events: none;
+  transition: opacity .45s ease;
+}
+.veil.on { opacity: 1; pointer-events: auto; }
+
+.frame.zoomed {
+  overflow: visible;
+  z-index: 6;
+  filter: contrast(1.02) saturate(1.04);
+  box-shadow:
+    0 50px 120px rgba(0,0,0,.75),
+    0 0 0 1px rgba(255,220,180,.35),
+    0 0 90px rgba(255,140,70,.22);
+}
+.frame.zoomed .shine { opacity: 0; }
+.frame.zoom-anim {
+  transition: transform .7s cubic-bezier(.2,.82,.2,1), filter .3s ease, box-shadow .3s ease;
+}
+.poster {
+  transition: clip-path .55s cubic-bezier(.2,.82,.2,1);
+}
+
+.break-layer {
+  position: fixed; z-index: 5; pointer-events: none;
+  overflow: visible;
+}
+.shard {
+  position: absolute; inset: 0;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: 0 0;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,.45));
+}
+
 @media (max-width: 700px) {
   .glow { opacity: .16; }
   .mark { letter-spacing: .12em; font-size: 10px; }
@@ -234,3 +273,4 @@ body.touch .cursor, body.touch #trail { display: none; }
   body { cursor: auto; }
   .cursor, #trail, #bolts { display: none; }
 }
+
