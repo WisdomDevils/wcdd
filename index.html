@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>wcdd.de</title>
   <meta name="theme-color" content="#050508" />
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=7" />
 </head>
 <body>
   <div class="noise" aria-hidden="true"></div>
@@ -22,9 +22,11 @@
   <div id="veil" class="veil" aria-hidden="true"></div>
   <main class="stage">
     <div class="frame" id="frame">
+      <div class="zoom-inner" id="zoomInner">
       <div class="shine" id="shine" aria-hidden="true"></div>
       <div id="ghost" class="ghost" aria-hidden="true"></div>
-      <img class="poster" id="poster" src="poster.jpg" alt="本群含有且不限于以下内容" />
+      <img class="poster" id="poster" decoding="async" src="poster.jpg" alt="本群含有且不限于以下内容" />
+      </div>
     </div>
   </main>
   <div id="cursor" class="cursor" aria-hidden="true">
@@ -35,6 +37,6 @@
   <canvas id="bolts" aria-hidden="true"></canvas>
   <canvas id="trail" aria-hidden="true"></canvas>
   <span class="mark">wcdd.de</span>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

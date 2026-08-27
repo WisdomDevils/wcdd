@@ -9,6 +9,7 @@
   const flash = document.getElementById("flash");
   const veil = document.getElementById("veil");
   const ghost = document.getElementById("ghost");
+  const zoomInner = document.getElementById("zoomInner");
   const dctx = dust.getContext("2d");
   const tctx = trail.getContext("2d");
   const bctx = bolts.getContext("2d");
@@ -20,6 +21,7 @@
   let gx = 0.3, gy = 0.3, gw = 0.38, gh = 0.24, gtx = 0.3, gty = 0.3, gtw = 0.38, gth = 0.24, ghostOn = false;
   let cx = innerWidth / 2, cy = innerHeight / 2;
   let vx = 0, vy = 0, glitchT = 0;
+  let natW = 4000, natH = 2650, fit = 1;
   const particles = [];
   const sparks = [];
 
@@ -34,6 +36,24 @@
     sizeCanvas(dust, dctx);
     sizeCanvas(trail, tctx);
     sizeCanvas(bolts, bctx);
+    layoutFit();
+  }
+
+  function layoutFit() {
+    if (!zoomInner || !poster) return;
+    natW = poster.naturalWidth || 4000;
+    natH = poster.naturalHeight || 2650;
+    const fw = frame.clientWidth;
+    if (!fw || !natW) return;
+    fit = fw / natW;
+    zoomInner.classList.add("is-hires");
+    zoomInner.style.width = natW + "px";
+    poster.style.width = natW + "px";
+    frame.style.height = (natH * fit) + "px";
+    if (!zoomed) {
+      zoomInner.style.transformOrigin = "0 0";
+      zoomInner.style.transform = "scale(" + fit + ")";
+    }
   }
 
   function spawn(n) {
@@ -307,19 +327,27 @@
   }
 
   function zoomIn(e) {
+    layoutFit();
     const fr = frame.getBoundingClientRect();
     const nx = Math.max(0, Math.min(1, (e.clientX - fr.left) / fr.width));
     const ny = Math.max(0, Math.min(1, (e.clientY - fr.top) / fr.height));
     const hole = focusAt(nx, ny, fr);
-    const px = fr.left + (hole.x + hole.w / 2) * fr.width;
-    const py = fr.top + (hole.y + hole.h / 2) * fr.height;
+    const ox = (hole.x + hole.w / 2) * natW;
+    const oy = (hole.y + hole.h / 2) * natH;
+    const hw = hole.w * natW;
+    const hh = hole.h * natH;
     const mobile = coarse || innerWidth < 700;
     const fill = mobile ? 0.94 : 0.78;
-    const cap = mobile ? 12 : 2.45;
-    let s = Math.min((fill * innerWidth) / (hole.w * fr.width), (fill * innerHeight) / (hole.h * fr.height));
-    s = Math.max(1.55, Math.min(s, cap));
-    const origin = ((hole.x + hole.w / 2) * 100) + "% " + ((hole.y + hole.h / 2) * 100) + "%";
-    const xform = "translate(" + (innerWidth / 2 - px) + "px," + (innerHeight / 2 - py) + "px) scale(" + s + ")";
+    let s = Math.min((fill * innerWidth) / hw, (fill * innerHeight) / hh);
+    if (s > 1) s = 1;
+    if (s < fit) s = fit;
+    const px = fr.left + (hole.x + hole.w / 2) * fr.width;
+    const py = fr.top + (hole.y + hole.h / 2) * fr.height;
+    const vis = s / fit;
+    const originPct = ((hole.x + hole.w / 2) * 100) + "% " + ((hole.y + hole.h / 2) * 100) + "%";
+    const visXform = "translate(" + (innerWidth / 2 - px) + "px," + (innerHeight / 2 - py) + "px) scale(" + vis + ")";
+    const tx = (innerWidth / 2 - fr.left) - ox * s;
+    const ty = (innerHeight / 2 - fr.top) - oy * s;
     const top = hole.y * 100;
     const right = (1 - hole.x - hole.w) * 100;
     const bottom = (1 - hole.y - hole.h) * 100;
@@ -327,28 +355,30 @@
 
     ghostOn = false;
     if (ghost) ghost.classList.remove("on");
-    explodeGlass(hole, xform, origin);
+    explodeGlass(hole, visXform, originPct);
     document.body.classList.add("is-zoomed");
     if (veil) veil.classList.add("on");
-    frame.classList.add("zoom-anim", "zoomed");
-    frame.style.transformOrigin = origin;
+    frame.classList.add("zoomed");
+    frame.style.transform = "none";
+    zoomInner.classList.add("zoom-anim");
+    zoomInner.style.transformOrigin = "0 0";
     poster.style.clipPath = "inset(" + top.toFixed(2) + "% " + right.toFixed(2) + "% " + bottom.toFixed(2) + "% " + left.toFixed(2) + "% round 8px)";
-    frame.style.transform = xform;
+    zoomInner.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + s + ")";
     spark(e.clientX, e.clientY, reduce ? 8 : 22);
     zoomed = true;
   }
 
   function zoomOut() {
-    frame.classList.add("zoom-anim");
+    zoomInner.classList.add("zoom-anim");
     frame.classList.remove("zoomed");
     document.body.classList.remove("is-zoomed");
     if (veil) veil.classList.remove("on");
     poster.style.clipPath = "inset(0% 0% 0% 0%)";
-    frame.style.transform = "none";
+    zoomInner.style.transformOrigin = "0 0";
+    zoomInner.style.transform = "scale(" + fit + ")";
     implodeGlass();
     setTimeout(function () {
-      frame.classList.remove("zoom-anim");
-      frame.style.transformOrigin = "50% 50%";
+      zoomInner.classList.remove("zoom-anim");
       poster.style.clipPath = "";
       zoomed = false;
       busy = false;
@@ -488,6 +518,8 @@
     if (zoomed && !busy) { busy = true; zoomOut(); }
   });
 
+  poster.addEventListener("load", layoutFit);
+  if (poster.complete) layoutFit();
   resize();
   spawn(reduce || coarse ? 40 : 220);
   if (!reduce) tick();

@@ -102,7 +102,7 @@ body.touch .cursor, body.touch #trail { display: none; }
   position: relative;
   width: min(92vw, 1280px);
   transform-style: preserve-3d;
-  will-change: transform, filter;
+  will-change: transform;
   border-radius: 10px;
   overflow: hidden;
   box-shadow:
@@ -111,7 +111,6 @@ body.touch .cursor, body.touch #trail { display: none; }
     0 0 120px rgba(120,180,255,.18);
   transition: box-shadow .25s ease, filter .12s linear;
   cursor: none;
-  filter: contrast(1.04) saturate(1.08);
 }
 .frame::after {
   content: "";
@@ -241,13 +240,23 @@ body.is-zoomed .beams { opacity: .12; }
   overflow: visible;
   z-index: 6;
   background: transparent;
-  filter: brightness(1.06) contrast(1.02);
+  filter: none;
   box-shadow: none;
 }
 .frame.zoomed::after { display: none; }
 .frame.zoomed .shine { opacity: 0; }
-.frame.zoom-anim {
-  transition: transform .7s cubic-bezier(.2,.82,.2,1), filter .3s ease, box-shadow .3s ease;
+.zoom-inner {
+  position: relative;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.zoom-inner.zoom-anim {
+  transition: transform .7s cubic-bezier(.2,.82,.2,1);
+}
+.zoom-inner.is-hires .poster {
+  width: auto;
+  max-width: none;
+  height: auto;
 }
 .poster {
   transition: clip-path .55s cubic-bezier(.2,.82,.2,1);
@@ -258,13 +267,13 @@ body.is-zoomed .beams { opacity: .12; }
   z-index: 2;
   pointer-events: none;
   border-radius: 10px;
-  border: 1px dashed rgba(255, 232, 196, .8);
+  border: 1.5px dashed rgba(196, 92, 28, .9);
   box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.18),
-    0 0 28px rgba(255,190,110,.28);
-  background: rgba(255, 248, 230, .07);
+    inset 0 0 0 1px rgba(255,255,255,.35),
+    0 0 0 1px rgba(255,220,180,.35),
+    0 0 22px rgba(255,150,60,.35);
+  background: rgba(255, 160, 70, .08);
   opacity: 0;
-  mix-blend-mode: screen;
 }
 .ghost.on { opacity: 1; }
 .frame.zoomed .ghost,
