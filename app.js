@@ -1,24 +1,16 @@
 (function () {
-  const src = window.HERO_SRC;
-  ["hero", "layerCyan", "layerGold"].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el && src) el.src = src;
-  });
-
-  const wrap = document.getElementById("heroWrap");
-  const cyan = document.getElementById("layerCyan");
-  const gold = document.getElementById("layerGold");
+  const frame = document.getElementById("frame");
   const canvas = document.getElementById("dust");
   const ctx = canvas.getContext("2d");
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const mobile = window.matchMedia("(max-width: 700px)").matches;
 
-  let w = 0, h = 0, mx = 0.5, my = 0.5, tx = 0.5, ty = 0.5;
+  let mx = 0.5, my = 0.5, tx = 0.5, ty = 0.5, zoomed = false;
   const particles = [];
 
   function resize() {
-    w = canvas.width = window.innerWidth * devicePixelRatio;
-    h = canvas.height = window.innerHeight * devicePixelRatio;
+    canvas.width = window.innerWidth * devicePixelRatio;
+    canvas.height = window.innerHeight * devicePixelRatio;
     canvas.style.width = window.innerWidth + "px";
     canvas.style.height = window.innerHeight + "px";
     ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
@@ -29,49 +21,40 @@
       particles.push({
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
-        r: Math.random() * 1.6 + 0.3,
-        s: Math.random() * 0.35 + 0.08,
-        a: Math.random() * 0.45 + 0.08,
-        gold: Math.random() > 0.45,
+        r: Math.random() * 1.4 + 0.25,
+        s: Math.random() * 0.28 + 0.06,
+        a: Math.random() * 0.35 + 0.06,
+        warm: Math.random() > 0.55,
       });
     }
   }
 
   function tick() {
-    tx += (mx - tx) * 0.06;
-    ty += (my - ty) * 0.06;
-
-    const dx = (tx - 0.5) * 18;
-    const dy = (ty - 0.5) * 12;
-    const rx = (ty - 0.5) * -10;
-    const ry = (tx - 0.5) * 14;
-
-    if (wrap && !reduce) {
-      wrap.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translate3d(${dx * 0.4}px, ${dy * 0.4}px, 0)`;
-    }
-    if (cyan && !reduce && !mobile) {
-      cyan.style.transform = `translate3d(${-dx * 0.35}px, ${-dy * 0.25}px, 0)`;
-    }
-    if (gold && !reduce && !mobile) {
-      gold.style.transform = `translate3d(${dx * 0.35}px, ${dy * 0.25}px, 0)`;
+    tx += (mx - tx) * 0.07;
+    ty += (my - ty) * 0.07;
+    if (frame && !reduce && !zoomed) {
+      const rx = (ty - 0.5) * -8;
+      const ry = (tx - 0.5) * 12;
+      const dx = (tx - 0.5) * 10;
+      const dy = (ty - 0.5) * 8;
+      frame.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translate3d(${dx}px, ${dy}px, 0)`;
     }
 
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     for (const p of particles) {
       p.y -= p.s;
-      p.x += Math.sin((p.y + p.r) * 0.01) * 0.15;
-      if (p.y < -8) {
-        p.y = window.innerHeight + 8;
+      p.x += Math.sin(p.y * 0.012) * 0.12;
+      if (p.y < -6) {
+        p.y = window.innerHeight + 6;
         p.x = Math.random() * window.innerWidth;
       }
       ctx.beginPath();
-      ctx.fillStyle = p.gold
-        ? `rgba(232,195,106,${p.a})`
-        : `rgba(110,231,242,${p.a})`;
+      ctx.fillStyle = p.warm
+        ? `rgba(255,160,110,${p.a})`
+        : `rgba(140,190,255,${p.a})`;
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fill();
     }
-
     requestAnimationFrame(tick);
   }
 
@@ -80,8 +63,13 @@
     my = e.clientY / window.innerHeight;
   });
   window.addEventListener("resize", resize);
+  frame.addEventListener("click", () => {
+    zoomed = !zoomed;
+    frame.classList.toggle("zoomed", zoomed);
+    if (zoomed) frame.style.transform = "none";
+  });
 
   resize();
-  spawn(reduce || mobile ? 40 : 120);
+  spawn(reduce || mobile ? 36 : 110);
   if (!reduce) tick();
 })();
