@@ -1,2 +1,3 @@
-# wcdd
-Landing page for wcdd.de
+# wcdd.de
+
+A single-image landing page with visual effects, deployed on Vercel.
